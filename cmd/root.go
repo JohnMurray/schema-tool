@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/johnmurray/schema-tool/log"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -54,7 +55,7 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfig, initLoggers)
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -72,10 +73,6 @@ func init() {
 	// verbose output/logging
 	RootCmd.PersistentFlags().BoolVarP(&verboseGlobal, "verbose", "v", false,
 		"verbose output")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	RootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -102,4 +99,8 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+}
+
+func initLoggers() {
+	log.InitLoggers(verboseGlobal)
 }

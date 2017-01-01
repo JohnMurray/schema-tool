@@ -17,7 +17,10 @@ package chain
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
+
+	"github.com/johnmurray/schema-tool/log"
 )
 
 //------------------------------------------------------------------------------
@@ -129,6 +132,108 @@ func TestAlterFilenameCheck(t *testing.T) {
 // parseMeta tests
 //------------------------------------------------------------------------------
 
+func TestValidMetaData(t *testing.T) {
+	var testData = []*struct {
+		header  string
+		isError bool
+		alter   *Alter
+	}{
+		// valid entries (general)
+		{"--ref: 1234abcd\n--direction: down", false, &Alter{Ref: "1234abcd", Direction: Down}},
+		{"--ref: 1234abcd\n--direction: DOWN", false, &Alter{Ref: "1234abcd", Direction: Down}},
+		{"--ref: 1234\n--backref:abcd\n--direction: down", false, &Alter{Ref: "1234", BackRef: "abcd", Direction: Down}},
+		// valid entries (test spacing)
+		{"--ref: 1234\n--direction: up", false, &Alter{Ref: "1234", Direction: Up}},
+		{"--ref:1234\n--direction:up", false, &Alter{Ref: "1234", Direction: Up}},
+		{"-- ref: 1234\n-- direction: up", false, &Alter{Ref: "1234", Direction: Up}},
+		{"-- ref:1234\n-- direction:up", false, &Alter{Ref: "1234", Direction: Up}},
+		// valid entries (require-env)
+		{"--ref:1234\n--direction:up\n--require-env: one", false,
+			&Alter{Ref: "1234", Direction: Up, RequireEnv: []string{"one"}}},
+		{"--ref:1234\n--direction:up\n--require-env: one,", false,
+			&Alter{Ref: "1234", Direction: Up, RequireEnv: []string{"one"}}},
+		{"--ref:1234\n--direction:up\n--require-env: one,,,", false,
+			&Alter{Ref: "1234", Direction: Up, RequireEnv: []string{"one"}}},
+		{"--ref:1234\n--direction:up\n--require-env: one,two,three", false,
+			&Alter{Ref: "1234", Direction: Up, RequireEnv: []string{"one", "two", "three"}}},
+		// valid entries (skip-env)
+		{"--ref:1234\n--direction:up\n--skip-env: one", false,
+			&Alter{Ref: "1234", Direction: Up, SkipEnv: []string{"one"}}},
+		{"--ref:1234\n--direction:up\n--skip-env: one,", false,
+			&Alter{Ref: "1234", Direction: Up, SkipEnv: []string{"one"}}},
+		{"--ref:1234\n--direction:up\n--skip-env: one,,,", false,
+			&Alter{Ref: "1234", Direction: Up, SkipEnv: []string{"one"}}},
+		{"--ref:1234\n--direction:up\n--skip-env: one,two,three", false,
+			&Alter{Ref: "1234", Direction: Up, SkipEnv: []string{"one", "two", "three"}}},
+		// valid ignore unknown keys
+		{"--ref: 1234\n--direction: up\n--boop:boop", false, &Alter{Ref: "1234", Direction: Up}},
+		{"--ref: 1234\n--direction: up\n--reff:meow", false, &Alter{Ref: "1234", Direction: Up}},
+		// ignore empty env keys
+		{"--ref:1234\n--direction:up\n--require-env: ,,,", false, &Alter{Ref: "1234", Direction: Up}},
+		{"--ref:1234\n--direction:up\n--require-env: ", false, &Alter{Ref: "1234", Direction: Up}},
+		{"--ref:1234\n--direction:up\n--skip-env: ", false, &Alter{Ref: "1234", Direction: Up}},
+		{"--ref:1234\n--direction:up\n--skip-env: ,,", false, &Alter{Ref: "1234", Direction: Up}},
+
+		// invalid missing direction
+		{"--ref: 1234\n--direction: sideways", true, nil},
+		{"--ref: 1234\n--direction: upp", true, nil},
+		{"--ref: 1234", true, nil},
+		// invalid/missing refs
+		{"--ref:1.2-4%", true, nil},
+		{"--ref:1234\n--backref:1.2-4%", true, nil},
+		{"--backref:1234\n", true, nil},
+		//invalid require + skip envs
+		{"--ref:1234\n--direction:up\n--skip-env: one\n--require-env:one", true, nil},
+		{"--ref:1234\n--direction:up\n--skip-env: one\n--require-env:two", true, nil},
+	}
+
+	// TODO: get NOP logger init working. WTF
+	log.InitLoggers(false)
+	for _, test := range testData {
+		alter, err := parseMeta(strings.Split(test.header, "\n"), "./test")
+		if err != nil && !test.isError {
+			t.Fail()
+		}
+		if test.alter != nil && err == nil {
+			if alter.Ref != test.alter.Ref {
+				t.Fail()
+			}
+			if alter.BackRef != test.alter.BackRef {
+				t.Fail()
+			}
+			if alter.Direction != test.alter.Direction {
+				t.Fail()
+			}
+			if !equalStringSlices(alter.RequireEnv, test.alter.RequireEnv) {
+				t.Fail()
+			}
+			if !equalStringSlices(alter.SkipEnv, test.alter.SkipEnv) {
+				t.Fail()
+			}
+		}
+	}
+}
+
+func equalStringSlices(a []string, b []string) bool {
+	if len(a) != len(b) {
+		fmt.Printf("%d -> %d\n", len(a), len(b))
+		return false
+	}
+	for _, va := range a {
+		found := false
+		for _, vb := range b {
+			if va == vb {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
+}
+
 //------------------------------------------------------------------------------
 // isValidRef tests
 //------------------------------------------------------------------------------
@@ -140,6 +245,7 @@ func TestIsValidRef(t *testing.T) {
 	}{
 		{ref: "hello", valid: true},
 		{ref: "1234567890", valid: true},
+		{ref: "1234abc", valid: true},
 		{ref: "abc1234def", valid: true},
 		{ref: "", valid: false},
 		{ref: " 1234 ", valid: false},

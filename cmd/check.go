@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/johnmurray/schema-tool/chain"
 	"github.com/spf13/cobra"
 )
@@ -35,9 +36,13 @@ These checks are run by default as part of many other commands. This
 command is exposed for user scripts/manual-testing to more easily
 identify issues with the alter-chain.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := chain.ScanDirectory(cwDirGlobal); err != nil {
+		groups, err := chain.ScanDirectory(cwDirGlobal)
+		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
+		}
+		for ref, group := range groups {
+			spew.Printf("%s: %#v\n", ref, group)
 		}
 	},
 }
