@@ -1,0 +1,6 @@
+{
+	"ImportPath": "github.com/johnmurray/schema-tool",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Deps": []
+}
