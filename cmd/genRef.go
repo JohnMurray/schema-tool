@@ -22,14 +22,15 @@ import (
 
 // genRefCmd represents the genRef command
 var genRefCmd = &cobra.Command{
-	Use:   "genRef",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "gen-ref",
+	Short: "Generate a new file-ref",
+	Long: `
+Generate a reference that could be used for an alter file.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+This is a utility command, to give the user flexibility in
+how new alter files are created. It is not necessary for in
+the normal workflow. Normal being defined as the workflow
+presented in this project's documentation.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("genRef called")
 	},
@@ -37,14 +38,4 @@ to quickly create a Cobra application.`,
 
 func init() {
 	RootCmd.AddCommand(genRefCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// genRefCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// genRefCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
