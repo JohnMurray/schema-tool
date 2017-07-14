@@ -8,11 +8,15 @@ test: compile
 	@echo "[running tests]"
 	@go test .
 
-compile:
+compile: copyright
 	go build $(BUILD_OPTS) -o $(BIN_NAME)
 	go vet
 	golint .
 	@gotags -tag-relative=true -R=true -sort=true -f="tags" -fields=+l .
+
+copyright:
+	@echo "Applying copyright to all Go source files"
+	@./script/copyright-header.sh
 
 setup:
 	go get -u github.com/tools/godep
