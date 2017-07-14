@@ -1,1 +1,7 @@
+# Editor Files
 tags
+*.swp
+
+# Build files
+schema
+

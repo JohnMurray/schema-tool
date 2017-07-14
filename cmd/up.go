@@ -19,16 +19,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var numberUp int
+var forceUp bool
+var noUndoUp bool
+
 // upCmd represents the up command
 var upCmd = &cobra.Command{
-	Use:   "up",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Use:   "up [REF]",
+	Short: "Bring up the schema to a specified revision",
+	Long: `
+Bring up the schema to a specified version by running
+the 'up' alters, starting from the one after the last
+applied alter. The history table is used to determine
+the current state of the database and is altered during
+the roll forward.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Args:
+  REF   Run all alters up to, and including, the REF given`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("up called")
 	},
@@ -37,13 +44,10 @@ to quickly create a Cobra application.`,
 func init() {
 	RootCmd.AddCommand(upCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// upCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// upCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	upCmd.PersistentFlags().IntVarP(&numberUp, "number", "n", 0,
+		"Number of up-alters from current state. overrides args")
+	upCmd.PersistentFlags().BoolVarP(&forceUp, "force", "f", false,
+		"Continue running up-alters even if an error has occurred")
+	upCmd.PersistentFlags().BoolVarP(&noUndoUp, "no-undo", "u", false,
+		"When comparing histories do not undo any previously ran alters")
 }
