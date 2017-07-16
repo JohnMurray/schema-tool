@@ -23,20 +23,25 @@ import (
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var cwDir string
-var verbose bool
+var cfgFileGlobal string
+var cwDirGlobal string
+var verboseGlobal bool
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
 	Use:   "schema-tool",
 	Short: "Manage your schemas with ease",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
+	Long: `
+A tool for managing schemas by basing alters around an alter-chain which
+is an ordering of how alters are applied to a given environment. Managing
+alters within a chain allows the tool to incrementally setup and tear
+down a database; the enforced ordering grants us reliable execution across
+multiple environments.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+The goal of the tool is to be both a local tool for setting up and tearing
+down dev environments as well as a tool for applying changes to production
+environments. All changes are tracked through the revision-history table
+for auditing purposes.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -51,13 +56,22 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
 	// Peristent flags available to all sub-commands
 	// global config
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.schema-tool.json)")
+	RootCmd.PersistentFlags().StringVar(&cfgFileGlobal, "config", "",
+		"config file (default is $HOME/.schema-tool.json)")
 	// directory we're running in
-	RootCmd.PersistentFlags().StringVarP(&cwDir, "dir", "d", "", "directory to run schema commands in (default is current dir)")
+	RootCmd.PersistentFlags().StringVarP(&cwDirGlobal, "dir", "d", cwd,
+		"directory to run schema commands in (default is current dir)")
 	// verbose output/logging
-	RootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	RootCmd.PersistentFlags().BoolVarP(&verboseGlobal, "verbose", "v", false,
+		"verbose output")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -66,9 +80,9 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
+	if cfgFileGlobal != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		viper.SetConfigFile(cfgFileGlobal)
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()

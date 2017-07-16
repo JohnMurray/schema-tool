@@ -16,7 +16,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/johnmurray/schema-tool/chain"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +35,10 @@ These checks are run by default as part of many other commands. This
 command is exposed for user scripts/manual-testing to more easily
 identify issues with the alter-chain.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("check called")
+		if _, err := chain.ScanDirectory(cwDirGlobal); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	},
 }
 
