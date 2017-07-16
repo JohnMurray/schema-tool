@@ -1,6 +1,8 @@
 package chain
 
 import (
+	"fmt"
+	"os"
 	"testing"
 )
 
@@ -13,6 +15,15 @@ func TestScanNonExistantDir(t *testing.T) {
 func TestScanNonDirFile(t *testing.T) {
 	if _, err := ScanDirectory("/dev/null"); err == nil {
 		t.Fail()
+	}
+}
+
+func TestReadHeader(t *testing.T) {
+	// TODO: finish test
+	if dir, err := os.Getwd(); err != nil {
+		t.Fail()
+	} else {
+		fmt.Println(dir + "/../test/chains/")
 	}
 }
 

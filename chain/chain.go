@@ -15,6 +15,7 @@
 package chain
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -39,8 +40,8 @@ type Alter struct {
 }
 
 type AlterGroup struct {
-	Up   Alter
-	Down Alter
+	Up   *Alter
+	Down *Alter
 }
 
 // Scan a given directory and return a mapping of AlterRef to AlterGroup
@@ -73,4 +74,49 @@ func ScanDirectory(dir string) (map[AlterRef]AlterGroup, error) {
 func isAlterFile(name string) bool {
 	var filenameRegex = regexp.MustCompile(`^(\d+)-([^-]+-)+(up|down).sql$`)
 	return filenameRegex.MatchString(name)
+}
+
+// Read the first N lines of an alter file that represent the "header." This is
+// the bit of stuff that contains all the meta-data required in alters.
+func readHeader(filePath string) ([256]string, error) {
+	var headerRegex = regexp.MustCompile(`^--`)
+	var lines [256]string
+
+	if file, err := os.Open(filePath); err != nil {
+		return lines, err
+	} else {
+		// clone file after we return
+		defer file.Close()
+
+		// read line by line
+		scanner := bufio.NewScanner(file)
+		i := 0
+		for scanner.Scan() {
+			if i == 256 {
+				return lines, errors.New(`Header lines (continuous block of lines starting with '--')
+				exceeds 256. Please add a blank line in-between the meta-data and any
+				comment lines that may follow.`)
+			}
+			line := scanner.Text()
+			if headerRegex.MatchString(line) {
+				lines[i] = line
+			} else {
+				// hit non-header line, we're done
+				return lines, nil
+			}
+		}
+
+		if err = scanner.Err(); err != nil {
+			return lines, err
+		}
+	}
+
+	return lines, nil
+}
+
+// Parse the meta-information from the file and return an Alter object.
+// Returns error if meta cannot be obtained or required information is
+// missing.
+func parseMeta(filePath string) (*Alter, error) {
+	return nil, nil
 }
