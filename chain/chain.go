@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 )
 
 // Reference that uniquely identifies a type
@@ -100,6 +101,7 @@ func readHeader(filePath string) ([256]string, error) {
 			line := scanner.Text()
 			if headerRegex.MatchString(line) {
 				lines[i] = line
+				i++
 			} else {
 				// hit non-header line, we're done
 				return lines, nil
@@ -117,6 +119,31 @@ func readHeader(filePath string) ([256]string, error) {
 // Parse the meta-information from the file and return an Alter object.
 // Returns error if meta cannot be obtained or required information is
 // missing.
-func parseMeta(filePath string) (*Alter, error) {
-	return nil, nil
+func parseMeta(lines [256]string, filePath string) (*Alter, error) {
+	// expect meta-lines to be single-line and in the form of
+	//   "-- key: value"
+	// regex checks for extraneous whitespace
+	var metaEntryRegex = regexp.MustCompile(`^--\s*([^\s]+)\s*:(.+)\s*$`)
+
+	var alter = new(Alter)
+
+	for _, line := range lines {
+		if matches := metaEntryRegex.FindStringSubmatch(line); len(matches) == 3 {
+			// 3 matches means we're good to go
+			key := strings.ToLower(strings.TrimSpace(matches[1]))
+			value := strings.TrimSpace(matches[2])
+
+			switch key {
+			case "ref":
+			case "backref":
+			case "direction":
+			case "require-env":
+			case "skip-env":
+			default:
+				// TODO: warn of unknown meta-data property
+			}
+		}
+	}
+
+	return alter, nil
 }
