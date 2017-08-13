@@ -1,7 +1,16 @@
 # Schema Tool
 
+<!--
 [![Build Status](https://travis-ci.org/appnexus/schema-tool.svg)](https://travis-ci.org/appnexus/schema-tool)
 [![Code Health](https://landscape.io/github/appnexus/schema-tool/master/landscape.svg?style=flat)](https://landscape.io/github/appnexus/schema-tool/master)
+-->
+
+---
+
+__Note__: This is a rewrite of the [appnexus/schema-tool](https://github.com/appnexus/schema-tool) in Go
+          and is not (yet) intende for production use. Please do not use, it will be ready in time.
+
+---
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->

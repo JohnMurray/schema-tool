@@ -36,6 +36,8 @@ const (
 )
 
 type Alter struct {
+	Ref       AlterRef
+	BackRef   AlterRef
 	Direction Direction
 	FileName  string
 }
@@ -60,10 +62,21 @@ func ScanDirectory(dir string) (map[AlterRef]AlterGroup, error) {
 	files, err := ioutil.ReadDir(dir)
 	for _, f := range files {
 		if f.IsDir() {
+			// only process top-level of dir
 			continue
 		}
 		if isAlterFile(f.Name()) {
 			fmt.Printf("Filename: %s\n", f.Name())
+			// todo: use path-like util to concat these
+			filePath := dir + "/" + f.Name()
+
+			if header, err := readHeader(dir + "/" + f.Name()); err != nil {
+				return nil, err
+			} else {
+				if _, err = parseMeta(header, filePath); err != nil {
+					return nil, err
+				}
+			}
 		}
 	}
 
@@ -79,9 +92,9 @@ func isAlterFile(name string) bool {
 
 // Read the first N lines of an alter file that represent the "header." This is
 // the bit of stuff that contains all the meta-data required in alters.
-func readHeader(filePath string) ([256]string, error) {
+func readHeader(filePath string) ([]string, error) {
 	var headerRegex = regexp.MustCompile(`^--`)
-	var lines [256]string
+	lines := make([]string, 256)
 
 	if file, err := os.Open(filePath); err != nil {
 		return lines, err
@@ -119,7 +132,7 @@ func readHeader(filePath string) ([256]string, error) {
 // Parse the meta-information from the file and return an Alter object.
 // Returns error if meta cannot be obtained or required information is
 // missing.
-func parseMeta(lines [256]string, filePath string) (*Alter, error) {
+func parseMeta(lines []string, filePath string) (*Alter, error) {
 	// expect meta-lines to be single-line and in the form of
 	//   "-- key: value"
 	// regex checks for extraneous whitespace
@@ -133,10 +146,28 @@ func parseMeta(lines [256]string, filePath string) (*Alter, error) {
 			key := strings.ToLower(strings.TrimSpace(matches[1]))
 			value := strings.TrimSpace(matches[2])
 
+			fmt.Printf("%s:    %s\n", key, value)
+
 			switch key {
 			case "ref":
+				if !isValidRef(value) {
+					return nil, errors.New("Invalid 'ref' value found in " + filePath)
+				}
+				alter.Ref = AlterRef(value)
 			case "backref":
+				if !isValidRef(value) {
+					return nil, errors.New(fmt.Sprintf("Invalid 'backref' value found in '%s'", filePath))
+				}
+				alter.BackRef = AlterRef(value)
 			case "direction":
+				value_lower := strings.ToLower(value)
+				if value_lower == "up" {
+					alter.Direction = Up
+				} else if value_lower == "down" {
+					alter.Direction = Down
+				} else {
+					return nil, errors.New(fmt.Sprintf("Invalid direction '%s' found in '%s'", value_lower, filePath))
+				}
 			case "require-env":
 			case "skip-env":
 			default:
@@ -145,5 +176,13 @@ func parseMeta(lines [256]string, filePath string) (*Alter, error) {
 		}
 	}
 
+	// TODO: validate all required meta-data fields are present
+
 	return alter, nil
+}
+
+// Validate that the ref is a valid identifier
+func isValidRef(ref string) bool {
+	var refRegex = regexp.MustCompile(`^[\da-zA-Z]+$`)
+	return refRegex.MatchString(ref)
 }

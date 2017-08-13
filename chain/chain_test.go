@@ -1,6 +1,21 @@
+// <--
+// Copyright © 2017 John Murray <me@johnmurray.io>
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+// -->
 package chain
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
@@ -113,3 +128,29 @@ func TestAlterFilenameCheck(t *testing.T) {
 //------------------------------------------------------------------------------
 // parseMeta tests
 //------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// isValidRef tests
+//------------------------------------------------------------------------------
+
+func TestIsValidRef(t *testing.T) {
+	var testData = []*struct {
+		ref   string
+		valid bool
+	}{
+		{ref: "hello", valid: true},
+		{ref: "1234567890", valid: true},
+		{ref: "abc1234def", valid: true},
+		{ref: "", valid: false},
+		{ref: " 1234 ", valid: false},
+	}
+
+	for _, test := range testData {
+		if isValidRef(test.ref) != test.valid {
+			if test.valid {
+				fmt.Printf("Failed to accept valid ref: '%s'\n", test.ref)
+			}
+			t.Fail()
+		}
+	}
+}
